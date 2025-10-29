@@ -370,3 +370,86 @@ How Google-style indexing and searching works under the hood.
 | **Analytics Dashboard** | Next.js + Chart.js / Recharts | Visualize crawl performance and search metrics |
 
 ---
+
+🚀 Advanced Senior-Level Features:
+14. Robots.txt Parser & Compliance ⚖️
+
+RFC 9309 compliant robots.txt parsing
+User-agent specific rules
+Crawl-delay directive support
+Wildcard pattern matching (* and $)
+Sitemap.xml extraction
+Intelligent caching (Redis + in-memory)
+Async parsing to avoid blocking
+
+15. Sitemap.xml Parser & Prioritization 🗺️
+
+Handles regular sitemaps and sitemap indices
+Supports gzipped sitemaps (.xml.gz)
+Extracts URL priority, changefreq, lastmod
+Nested sitemap index traversal
+Intelligent priority calculation
+Automatic dispatch to crawl queue
+Respects lastmod for incremental crawling
+
+16. Content-Based Deduplication (SimHash) 🔍
+
+SimHash algorithm for near-duplicate detection
+Detects content duplicates (not just URL duplicates)
+Hamming distance calculation for similarity
+Identifies mirror sites and scraped content
+Batch duplicate detection in existing index
+Automatic duplicate removal with PageRank preservation
+Redis-based fingerprint caching
+
+17. Distributed Locking & Advanced Rate Limiting 🔐
+
+Redlock algorithm for distributed locks
+Atomic lock acquisition with Lua scripts
+Token bucket rate limiting (burst traffic support)
+Sliding window rate limiting (prevents boundary gaming)
+Per-domain fairness scheduling
+Lock retry with exponential backoff
+Comprehensive statistics and monitoring
+
+18. Circuit Breaker & Resilience Patterns ⚡
+
+Circuit breaker pattern (CLOSED/OPEN/HALF_OPEN states)
+Automatic failure detection and recovery
+Bulkhead pattern for resource isolation
+Prevents cascading failures
+Per-domain circuit breakers
+Prometheus metrics integration
+Configurable thresholds and timeouts
+
+19. Query Expansion & Semantic Search 🧠
+
+Synonym-based query expansion
+Spelling correction ("did you mean?")
+Entity detection (programming languages, years)
+Intent classification (questions, tutorials)
+Result diversification (max per domain)
+Related searches generation
+Advanced Elasticsearch queries with boosting
+Function score for PageRank integration
+
+20. Comprehensive Monitoring & Alerting 📊
+
+Real-time metrics (throughput, latency, error rates)
+Prometheus/Grafana integration
+Queue depth monitoring
+Circuit breaker health tracking
+SLI/SLO tracking (efficiency, availability)
+Automatic alert generation
+Health checks for load balancers
+Performance percentiles (p95, p99)
+
+| Feature         | Senior-Level Aspects                                                                 |
+|-----------------|-------------------------------------------------------------------------------------|
+| Robots.txt      | RFC compliance, pattern matching, distributed caching                               |
+| Sitemap         | Recursive parsing, gzip support, priority algorithms                                |
+| SimHash         | Advanced hashing algorithm, Hamming distance, content similarity                     |
+| Locking         | Distributed consensus, Lua atomic operations, fair scheduling                        |
+| Circuit Breaker | State machines, failure prediction, auto-recovery                                    |
+| Query Expansion | NLP techniques, synonym graphs, semantic understanding                               |
+| Monitoring      | Production observability, SLO tracking, alerting pipelines                           |
