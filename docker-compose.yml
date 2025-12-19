@@ -167,6 +167,22 @@ services:
     networks:
       - crawler-network
 
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./search-engine-ui
+      dockerfile: Dockerfile
+    container_name: crawler-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - postgres
+      - elasticsearch
+    networks:
+      - crawler-network
+
 volumes:
   postgres-data:
   redis-data:
