@@ -4,9 +4,8 @@ import com.chibao.edu.search_engine.common.CrawlStatus;
 import com.chibao.edu.search_engine.repository.CrawlUrlRepository;
 import com.chibao.edu.search_engine.repository.DomainMetadataRepository;
 import com.chibao.edu.search_engine.repository.WebPageRepository;
-import com.chibao.edu.search_engine.service.CrawlSchedulerService;
-import com.chibao.edu.search_engine.service.IndexerService;
-import com.chibao.edu.search_engine.service.LinkDiscoveryService;
+import com.chibao.edu.search_engine.service.*;
+import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,12 @@ public class AdminController {
     private final CrawlUrlRepository crawlUrlRepository;
     private final DomainMetadataRepository domainMetadataRepository;
     private final WebPageRepository webPageRepository;
+
+    // New services
+    private final URLFrontierService urlFrontierService;
+    private final PageRankService pageRankService;
+    private final BloomFilterService bloomFilterService;
+    private final TokenBucketRateLimiter tokenBucketRateLimiter;
 
     /**
      * Add seed URLs to start crawling
@@ -97,14 +102,93 @@ public class AdminController {
      */
     @PostMapping("/indexer/pagerank/update")
     @Operation(summary = "Update PageRank scores", description = "Trigger PageRank score recalculation")
-    public ResponseEntity<Map<String, String>> updatePageRank() {
+    public ResponseEntity<Map<String, Object>> updatePageRank() {
         // Run asynchronously
-        new Thread(() -> indexerService.updatePageRankScores()).start();
+        new Thread(() -> {
+            int pagesProcessed = pageRankService.calculatePageRank();
+        }).start();
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "PageRank update started in background");
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "PageRank calculation started in background");
+        response.put("status", "PROCESSING");
 
         return ResponseEntity.accepted().body(response);
+    }
+
+    /**
+     * Get PageRank statistics
+     */
+    @GetMapping("/pagerank/stats")
+    @Operation(summary = "Get PageRank statistics", description = "Retrieve PageRank statistics and top pages")
+    public ResponseEntity<Map<String, Object>> getPageRankStats() {
+        return ResponseEntity.ok(pageRankService.getStatistics());
+    }
+
+    /**
+     * Get URL Frontier statistics
+     */
+    @GetMapping("/frontier/stats")
+    @Operation(summary = "Get URL Frontier statistics", description = "Retrieve frontier size and strategy info")
+    public ResponseEntity<Map<String, Object>> getFrontierStats() {
+        return ResponseEntity.ok(urlFrontierService.getStatistics());
+    }
+
+    /**
+     * Change URL Frontier strategy
+     */
+    @PostMapping("/frontier/strategy")
+    @Operation(summary = "Change frontier strategy", description = "Change URL prioritization strategy (bfs|best-first|opic|focused)")
+    public ResponseEntity<Map<String, String>> changeFrontierStrategy(@RequestParam String strategy) {
+        urlFrontierService.setStrategy(strategy);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Strategy changed successfully");
+        response.put("newStrategy", urlFrontierService.getCurrentStrategyName());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get Bloom Filter statistics
+     */
+    @GetMapping("/deduplication/stats")
+    @Operation(summary = "Get deduplication statistics", description = "Retrieve Bloom Filter statistics")
+    public ResponseEntity<Map<String, Object>> getDeduplicationStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("approximateElementCount", bloomFilterService.getApproximateElementCount());
+        stats.put("expectedFalsePositiveProbability", bloomFilterService.getExpectedFalsePositiveProbability());
+
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get rate limit status for a domain
+     */
+    @GetMapping("/rate-limit/{domain}")
+    @Operation(summary = "Get rate limit status", description = "Check rate limit status for a specific domain")
+    public ResponseEntity<Map<String, Object>> getRateLimitStatus(@PathVariable String domain) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("domain", domain);
+        stats.put("currentTokens", tokenBucketRateLimiter.getCurrentTokens(domain));
+        stats.put("waitTimeMs", tokenBucketRateLimiter.getWaitTimeMs(domain));
+        stats.put("canCrawl", tokenBucketRateLimiter.tryAcquire(domain));
+
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Reset rate limit for a domain
+     */
+    @PostMapping("/rate-limit/{domain}/reset")
+    @Operation(summary = "Reset rate limit", description = "Reset rate limit for a specific domain")
+    public ResponseEntity<Map<String, String>> resetRateLimit(@PathVariable String domain) {
+        tokenBucketRateLimiter.reset(domain);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Rate limit reset successfully");
+        response.put("domain", domain);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

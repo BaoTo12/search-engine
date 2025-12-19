@@ -25,8 +25,18 @@ import java.util.stream.Collectors;
 public class QueryExpansionService {
 
     // Synonym dictionary (in production, load from file or database)
-    private static final Map<String, List<String>> SYNONYMS = new HashMap<>() {{
-        put("java", List.of("jdk", "jre", "java programming","openjdk"));put("javascript",List.of("js","ecmascript","node","nodejs"));put("python",List.of("py","python programming","python3"));put("algorithm",List.of("algo","algorithms","algorithmic"));put("database",List.of("db","databases","data store"));put("tutorial",List.of("guide","how-to","walkthrough","introduction"));put("error",List.of("exception","bug","issue","problem"));put("performance",List.of("speed","optimization","efficiency"));}};
+    private static final Map<String, List<String>> SYNONYMS = new HashMap<>() {
+        {
+            put("java", List.of("jdk", "jre", "java programming", "openjdk"));
+            put("javascript", List.of("js", "ecmascript", "node", "nodejs"));
+            put("python", List.of("py", "python programming", "python3"));
+            put("algorithm", List.of("algo", "algorithms", "algorithmic"));
+            put("database", List.of("db", "databases", "data store"));
+            put("tutorial", List.of("guide", "how-to", "walkthrough", "introduction"));
+            put("error", List.of("exception", "bug", "issue", "problem"));
+            put("performance", List.of("speed", "optimization", "efficiency"));
+        }
+    };
 
     // Common programming languages for entity detection
     private static final Set<String> PROGRAMMING_LANGUAGES = Set.of(
@@ -225,30 +235,30 @@ public class QueryExpansionService {
      */
     private double calculateConfidence(String original, String corrected, List<String> synonyms) {
         double confidence = 0.5; // Base confidence
-        
+
         // Higher confidence if no corrections needed
         if (original.equals(corrected)) {
             confidence += 0.3;
         }
-        
+
         // Higher confidence if synonyms found
         if (!synonyms.isEmpty()) {
             confidence += Math.min(0.2, synonyms.size() * 0.05);
         }
-        
+
         return Math.min(1.0, confidence);
     }
 
     /**
      * Generate "Did you mean?" suggestion.
      */
-    public String getDidYouMeanSuggestion(String original Expanded) {
+    public String getDidYouMeanSuggestion(String originalQuery) {
         ExpandedQuery expanded = expandQuery(originalQuery);
-        
+
         if (!expanded.getOriginal().equals(expanded.getCorrected())) {
             return expanded.getCorrected();
         }
-        
+
         return null; // No suggestion needed
     }
 }
