@@ -1,8 +1,8 @@
 🕸️ Distributed Crawler & Indexer (Search Engine Core)
 🧭 Overview
 
-This project aims to build a scalable, distributed web crawling and indexing system — the foundation of a search engine.
-It will consist of multiple services (microservices or modules) that coordinate via Kafka and store structured data in Elasticsearch, enabling users to perform text-based searches through a REST API.
+This project aims to build a complete, scalable search engine with a **Google-like web interface**.
+It consists of multiple backend services (microservices) that coordinate via Kafka and store structured data in Elasticsearch, plus a modern **Next.js frontend** that provides an intuitive search experience similar to Google.
 
 🎯 Goals
 
@@ -12,16 +12,23 @@ Scale horizontally (add more crawlers easily).
 
 Store, tokenize, and rank indexed documents.
 
-Provide search results through a REST or GraphQL API.
+Provide search results through a REST API.
+
+**Build a Google-like web interface** for end users to search intuitively.
 
 Maintain fault-tolerance and high throughput.
 
 🧱 System Architecture Overview
 
 +-------------------------------------------------------------+
-|                    User Search Interface                    |
-|               (REST / GraphQL Search API)                   |
+|              User Search Interface (Web UI)                 |
+|          Next.js Frontend (Google-like Interface)           |
 +-----------------------------+-------------------------------+
+                              |
+                              v
+                 +----------------------------+
+                 |    Search API (REST)       |
+                 +----------------------------+
                               |
                               v
                    +----------------------+
@@ -114,6 +121,244 @@ Maintain fault-tolerance and high throughput.
 
 ---
 
+## 🧮 Web Crawling Algorithms
+
+### 1. 📊 URL Frontier Management Algorithms
+
+#### **Breadth-First Search (BFS)** 🌊
+- **Purpose**: Crawl web pages level by level from seed URLs
+- **How it works**: 
+  - Start with seed URLs (depth 0)
+  - Crawl all links from those pages (depth 1)
+  - Then crawl all links from depth 1 pages (depth 2)
+  - Continue until max depth reached
+- **Pros**: Finds important pages quickly, good coverage
+- **Cons**: Can get stuck on large sites
+- **Use case**: General-purpose web crawling
+
+#### **Best-First Search** 🎯
+- **Purpose**: Prioritize crawling high-value pages first
+- **How it works**: 
+  - Assign priority scores to URLs (based on PageRank, domain authority, etc.)
+  - Always crawl the highest-priority URL next
+  - Update priorities as new links are discovered
+- **Pros**: Maximizes crawl efficiency, finds important content faster
+- **Cons**: May miss less popular but valuable content
+- **Use case**: Limited crawl budget, focused crawling
+
+#### **Focused Crawling** 🔍
+- **Purpose**: Target specific topics or domains
+- **How it works**:
+  - Use classifiers to predict page relevance
+  - Only follow links likely to lead to target content
+  - Adjust strategy based on hit rate
+- **Pros**: Very efficient for topic-specific crawling
+- **Cons**: May miss related content
+- **Use case**: Vertical search engines, topic-specific indexes
+
+---
+
+### 2. ⚖️ URL Prioritization Algorithms
+
+#### **PageRank-based Prioritization** 📈
+- **Formula**: Priority = PageRank(page) × Freshness(page)
+- **Implementation**:
+  ```
+  score = (inbound_links_count × link_quality) / time_since_last_crawl
+  ```
+- **Use case**: Prioritize authoritative pages
+
+#### **OPIC (Online Page Importance Computation)** 💰
+- **Purpose**: Calculate page importance without full graph analysis
+- **How it works**:
+  - Each page starts with cash = 1.0
+  - When crawled, splits cash among outbound links
+  - Pages with more incoming "cash" crawled first
+- **Pros**: Lightweight, no global computation needed
+- **Cons**: Less accurate than full PageRank
+- **Use case**: Real-time crawl prioritization
+
+#### **Domain Authority Scoring** 🏆
+- **Purpose**: Prioritize pages from high-quality domains
+- **Metrics**:
+  - Domain age and reputation
+  - Historical content quality
+  - Backlink profile
+  - Crawl success rate
+- **Use case**: Balancing breadth and quality
+
+---
+
+### 3. 🔒 URL Deduplication Algorithms
+
+#### **Bloom Filter** 🌸
+- **Purpose**: Fast, memory-efficient duplicate detection
+- **How it works**:
+  - Hash URLs multiple times with different functions
+  - Set bits in bit array
+  - Check if all bits set before crawling
+- **Pros**: Very fast (O(1)), low memory usage
+- **Cons**: False positives possible (but no false negatives)
+- **Space**: ~10 bits per URL for 1% error rate
+- **Use case**: First-level deduplication
+
+#### **Hash-based Deduplication** #️⃣
+- **Implementation**:
+  ```java
+  String urlHash = SHA256(normalizedUrl);
+  if (redisCache.exists(urlHash)) {
+      return DUPLICATE;
+  }
+  redisCache.set(urlHash, true, TTL);
+  ```
+- **Pros**: 100% accurate, persistent
+- **Cons**: Higher memory/storage cost
+- **Use case**: Critical deduplication, permanent storage
+
+#### **URL Normalization** 🔧
+- **Techniques**:
+  - Convert to lowercase: `HTTP://Example.Com` → `http://example.com`
+  - Remove default ports: `http://site.com:80` → `http://site.com`
+  - Sort query parameters: `?b=2&a=1` → `?a=1&b=2`
+  - Remove tracking params: `?utm_source=...` → (removed)
+  - Resolve relative paths: `/./page` → `/page`
+  - Add trailing slash to directories: `/dir` → `/dir/`
+
+---
+
+### 4. 🤝 Politeness & Rate Limiting Algorithms
+
+#### **Token Bucket Algorithm** 🪣
+- **Purpose**: Allow burst traffic while limiting average rate
+- **How it works**:
+  ```
+  bucket_capacity = 10 requests
+  refill_rate = 1 request/second
+  
+  if bucket.tokens > 0:
+      bucket.tokens -= 1
+      crawl(url)
+  else:
+      wait(until token available)
+  ```
+- **Pros**: Flexible, allows controlled bursts
+- **Cons**: More complex than fixed-rate limiting
+- **Use case**: Per-domain rate limiting
+
+#### **Exponential Backoff** ⏱️
+- **Purpose**: Gracefully handle errors and rate limits
+- **Implementation**:
+  ```
+  wait_time = min(base_delay × 2^(attempt_count), max_delay)
+  wait_time += random(0, wait_time × 0.1)  // jitter
+  ```
+- **Use case**: Retry logic after 429/503 errors
+
+#### **Domain-based Scheduling** 🌐
+- **Purpose**: Respect crawl-delay from robots.txt
+- **How it works**:
+  - Maintain per-domain queues
+  - Track last crawl time per domain
+  - Enforce minimum delay between requests
+  ```
+  min_delay = max(
+      robots_txt.crawl_delay,
+      default_politeness_delay,
+      adaptive_delay_based_on_errors
+  )
+  ```
+
+---
+
+### 5. 🔄 Recrawl & Freshness Algorithms
+
+#### **Freshness-based Scheduling** 🕐
+- **Purpose**: Keep index up-to-date
+- **Strategies**:
+  - **Uniform**: Recrawl all pages at same frequency
+  - **Proportional**: More frequent recrawl for fast-changing pages
+  - **Poisson Process**: Model page changes probabilistically
+  
+#### **Change Detection** 🔎
+- **Techniques**:
+  - **Hash Comparison**: Compare content hash with previous crawl
+  - **Last-Modified Header**: Use HTTP headers
+  - **ETag**: Efficient change detection
+  - **Sampling**: Predict change frequency from history
+
+#### **Adaptive Recrawl** 🎛️
+- **Formula**:
+  ```
+  recrawl_frequency = base_frequency × 
+                      page_importance_score × 
+                      historical_change_rate
+  ```
+
+---
+
+### 6. 🌍 Distributed Crawling Algorithms
+
+#### **Consistent Hashing** 🔑
+- **Purpose**: Distribute URLs across crawler nodes
+- **How it works**:
+  ```
+  node = hash(domain) % num_crawler_nodes
+  ```
+- **Pros**: Even distribution, easy to scale
+- **Cons**: Domain locality may cause imbalance
+
+#### **Hash-based Partitioning** 📦
+- **Purpose**: Ensure same domain goes to same crawler (politeness)
+- **Implementation**:
+  ```
+  partition = hash(domain) % kafka_partitions
+  ```
+- **Benefit**: Single consumer per domain = automatic rate limiting
+
+#### **Work Stealing** 🏃
+- **Purpose**: Balance load dynamically
+- **How it works**:
+  - Idle crawlers steal work from busy crawlers
+  - Maintains work queues per crawler
+  - Periodic load balancing
+
+---
+
+### 7. 🎯 Content Quality & Selection
+
+#### **Content Fingerprinting (SimHash)** 🔢
+- **Purpose**: Detect near-duplicate content
+- **How it works**:
+  1. Tokenize content into features
+  2. Hash each feature
+  3. Weight features by frequency (TF-IDF)
+  4. Combine into 64-bit fingerprint
+  5. Compare fingerprints (Hamming distance < 3 = duplicate)
+- **Use case**: Deduplication of mirror sites, scraped content
+
+#### **Link Quality Scoring** ⭐
+- **Metrics**:
+  - Anchor text relevance
+  - Position in page (header links > footer links)
+  - Context similarity
+  - URL structure (depth, parameters)
+- **Use for**: Prioritizing which links to follow
+
+---
+
+## 📋 Algorithm Selection Guide
+
+| Scenario | Recommended Algorithms |
+|----------|------------------------|
+| **General web crawling** | BFS + PageRank prioritization + Bloom filter |
+| **Topic-specific crawling** | Focused crawling + Best-first search |
+| **Limited resources** | Best-first + OPIC + Aggressive deduplication |
+| **Fresh content (news)** | Adaptive recrawl + Freshness-based scheduling |
+| **Large scale (billions of pages)** | Distributed + Consistent hashing + Bloom filters |
+| **Respectful crawling** | Token bucket + Exponential backoff + robots.txt |
+
+---
+
 ### 4. 📥 Indexer Service
 **Purpose:** Converts raw page data into an inverted index for fast search queries.
 
@@ -191,9 +436,9 @@ Optional: offline ranking updates.
 
 🔹 Search Phase
 
-User sends query → Search API → queries Elasticsearch.
+User types query in **Web UI** → Search API → queries Elasticsearch.
 
-Results returned → ranked → paginated.
+Results returned → ranked → paginated → displayed in Google-like interface.
 
 🚀 Scaling Strategy
 Component	Scaling Approach
@@ -260,8 +505,8 @@ DevOps	Docker, monitoring, observability
 Architecture	Event-driven design & system decoupling
 🧰 Recommended Tech Stack
 Layer	Technologies
-Language	Java 17+
-Framework	Spring Boot 3
+Language	Java 21+
+Framework	Spring Boot 3+
 Message Broker	Apache Kafka
 Cache & Deduplication	Redis
 Search Engine	Elasticsearch / Lucene
@@ -269,6 +514,46 @@ Database (metadata)	PostgreSQL
 Containerization	Docker, Kubernetes
 Monitoring	Prometheus, Grafana, ELK
 Testing	JUnit, Testcontainers
+## 🎨 Google-Like Web Interface
+
+### Core Features
+
+**Search Experience**
+- Clean, minimalist design inspired by Google
+- Instant search suggestions as you type
+- Advanced search filters (date, domain, file type)
+- "Did you mean?" spelling correction
+- Search history and saved searches
+
+**Results Display**
+- Title, URL, and snippet for each result
+- Pagination with infinite scroll option
+- Related searches section
+- Number of results and search time display
+- Rich snippets with highlighted keywords
+
+**UI/UX Components**
+- Responsive design (mobile, tablet, desktop)
+- Dark mode support
+- Loading states and skeleton screens
+- Smooth animations and transitions
+- Keyboard shortcuts (/ to focus search)
+
+**Tech Stack**
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State Management**: React Query for caching
+- **Debouncing**: Optimized API calls for suggestions
+- **SEO**: Server-side rendering for better performance
+
+### Pages
+1. **Home Page** (`/`) - Search box with Google-like minimal design
+2. **Search Results** (`/search?q=...`) - Results list with filters
+3. **About** (`/about`) - Project information
+4. **Advanced Search** (`/advanced`) - Detailed search options
+
+---
+
 📅 Future Improvements
 
 Domain-based crawl scheduling and fairness policy.
@@ -277,9 +562,11 @@ Multi-language tokenization and stemming.
 
 Distributed ranking computation.
 
-Web-based search UI (React or Angular frontend).
+Image search capabilities.
 
 API Gateway integration with authentication.
+
+Personalized search results based on user preferences.
 
 🧩 Summary
 
@@ -299,8 +586,8 @@ How Google-style indexing and searching works under the hood.
 ### 🏗️ Backend (Core Services)
 | Category | Technology | Purpose |
 |-----------|-------------|----------|
-| **Language** | Java 17+ | Primary backend development language |
-| **Framework** | Spring Boot 3 | Microservice development, REST API, configuration management |
+| **Language** | Java 21+ | Primary backend development language |
+| **Framework** | Spring Boot 3+ | Microservice development, REST API, configuration management |
 | **Concurrency** | Java ExecutorService / CompletableFuture | Multithreading for crawling and fetching pages |
 | **Message Broker** | Apache Kafka | Event-driven communication between microservices (crawl, parse, index) |
 | **Cache / Deduplication** | Redis | URL deduplication, caching, and rate-limiting |
@@ -354,8 +641,8 @@ How Google-style indexing and searching works under the hood.
 | Category | Technology | Purpose |
 |-----------|-------------|----------|
 | **Build Tool** | Maven / Gradle | Build automation and dependency management |
-| **Version Control** | Git + GitHub / GitLab | Source control and project management |
-| **CI/CD** | GitHub Actions / Jenkins | Automated build, test, and deployment pipelines |
+| **Version Control** | Git + GitHub  | Source control and project management |
+| **CI/CD** | GitHub Actions  | Automated build, test, and deployment pipelines |
 | **Container Registry** | Docker Hub / GitHub Packages | Image storage and versioning |
 | **Infrastructure as Code** | Terraform / Helm (optional) | Automated environment provisioning |
 
