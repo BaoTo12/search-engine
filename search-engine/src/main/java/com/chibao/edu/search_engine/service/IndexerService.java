@@ -3,7 +3,7 @@ package com.chibao.edu.search_engine.service;
 import com.chibao.edu.search_engine.config.KafkaTopics;
 import com.chibao.edu.search_engine.dto.request.IndexRequest;
 import com.chibao.edu.search_engine.entity.WebPage;
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +46,7 @@ public class IndexerService {
     /**
      * Listen to index requests from Kafka
      */
-    @KafkaListener(
-            topics = KafkaTopics.INDEX_REQUESTS,
-            containerFactory = "indexRequestListenerFactory"
-    )
+    @KafkaListener(topics = KafkaTopics.INDEX_REQUESTS, containerFactory = "indexRequestListenerFactory")
     public void processIndexRequest(IndexRequest request, Acknowledgment ack) {
         log.info("Processing index request for: {}", request.getUrl());
 
@@ -215,7 +212,8 @@ public class IndexerService {
         StringBuilder hexString = new StringBuilder();
         for (byte b : hash) {
             String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
+            if (hex.length() == 1)
+                hexString.append('0');
             hexString.append(hex);
         }
 

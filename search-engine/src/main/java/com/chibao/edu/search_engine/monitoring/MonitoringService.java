@@ -3,7 +3,7 @@ package com.chibao.edu.search_engine.monitoring;
 import com.chibao.edu.search_engine.common.CrawlStatus;
 import com.chibao.edu.search_engine.components.CircuitBreakerRegistry;
 import com.chibao.edu.search_engine.repository.CrawlUrlRepository;
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -90,12 +90,12 @@ public class MonitoringService {
 
         // Queue depth gauges
         pendingCrawlsGauge = Gauge.builder("crawler.queue.pending",
-                        () -> crawlUrlRepository.countByStatus(CrawlStatus.PENDING))
+                () -> crawlUrlRepository.countByStatus(CrawlStatus.PENDING))
                 .description("Number of URLs pending crawl")
                 .register(meterRegistry);
 
         indexSizeGauge = Gauge.builder("index.size",
-                        () -> webPageRepository.count())
+                () -> webPageRepository.count())
                 .description("Total number of indexed documents")
                 .register(meterRegistry);
 
@@ -110,7 +110,7 @@ public class MonitoringService {
 
         // System health gauge
         Gauge.builder("system.health",
-                        () -> systemHealth.ordinal())
+                () -> systemHealth.ordinal())
                 .description("Overall system health (0=healthy, 1=degraded, 2=unhealthy)")
                 .register(meterRegistry);
     }
@@ -208,8 +208,7 @@ public class MonitoringService {
         }
 
         // Circuit breaker health
-        Map<String, CircuitBreakerRegistry.CircuitBreakerState> breakerStates =
-                circuitBreakerRegistry.getAllStates();
+        Map<String, CircuitBreakerRegistry.CircuitBreakerState> breakerStates = circuitBreakerRegistry.getAllStates();
 
         long openBreakers = breakerStates.values().stream()
                 .filter(state -> state == CircuitBreakerRegistry.CircuitBreakerState.OPEN)
@@ -319,8 +318,7 @@ public class MonitoringService {
             alerts.add(new Alert(
                     AlertLevel.WARNING,
                     "Crawl efficiency below 80%: " + String.format("%.2f%%", efficiency),
-                    "crawler.efficiency"
-            ));
+                    "crawler.efficiency"));
         }
 
         // Alert: Queue backlog
@@ -329,8 +327,7 @@ public class MonitoringService {
             alerts.add(new Alert(
                     AlertLevel.WARNING,
                     "Large crawl queue backlog: " + pending + " URLs",
-                    "crawler.queue.backlog"
-            ));
+                    "crawler.queue.backlog"));
         }
 
         // Alert: Slow searches
@@ -339,8 +336,7 @@ public class MonitoringService {
             alerts.add(new Alert(
                     AlertLevel.WARNING,
                     "Search latency high: " + String.format("%.2fms", avgSearchLatency),
-                    "search.latency"
-            ));
+                    "search.latency"));
         }
 
         // Alert: Many circuit breakers open
@@ -350,8 +346,7 @@ public class MonitoringService {
             alerts.add(new Alert(
                     AlertLevel.CRITICAL,
                     "Many circuit breakers open: " + openBreakers,
-                    "circuit_breaker.open"
-            ));
+                    "circuit_breaker.open"));
         }
 
         return alerts;

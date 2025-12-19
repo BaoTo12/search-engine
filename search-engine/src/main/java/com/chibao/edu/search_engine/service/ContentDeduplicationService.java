@@ -1,7 +1,7 @@
 package com.chibao.edu.search_engine.service;
 
 import com.chibao.edu.search_engine.entity.WebPage;
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
@@ -189,10 +189,12 @@ public class ContentDeduplicationService {
         for (String key : candidateKeys) {
             try {
                 String storedData = redisTemplate.opsForValue().get(key);
-                if (storedData == null) continue;
+                if (storedData == null)
+                    continue;
 
                 String[] parts = storedData.split(":", 2);
-                if (parts.length != 2) continue;
+                if (parts.length != 2)
+                    continue;
 
                 long storedFingerprint = Long.parseLong(parts[0]);
                 String storedUrl = parts[1];

@@ -3,7 +3,7 @@ package com.chibao.edu.search_engine.controller;
 import com.chibao.edu.search_engine.common.CrawlStatus;
 import com.chibao.edu.search_engine.repository.CrawlUrlRepository;
 import com.chibao.edu.search_engine.repository.DomainMetadataRepository;
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import com.chibao.edu.search_engine.service.*;
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;

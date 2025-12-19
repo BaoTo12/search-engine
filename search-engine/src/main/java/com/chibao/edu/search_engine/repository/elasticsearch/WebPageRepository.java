@@ -1,4 +1,4 @@
-package com.chibao.edu.search_engine.repository;
+package com.chibao.edu.search_engine.repository.elasticsearch;
 
 import com.chibao.edu.search_engine.entity.WebPage;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
