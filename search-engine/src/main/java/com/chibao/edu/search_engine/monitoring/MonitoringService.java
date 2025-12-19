@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
@@ -64,6 +65,7 @@ public class MonitoringService {
     // Health status
     private volatile HealthStatus systemHealth = HealthStatus.HEALTHY;
 
+    @PostConstruct
     public void init() {
         registerMetrics();
     }

@@ -60,8 +60,11 @@ public class CrawlUrl {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (priority == null) priority = 5;
-        if (failureCount == null) failureCount = 0;
+        updatedAt = LocalDateTime.now(); // FIX: Set updatedAt to prevent NULL constraint violation
+        if (priority == null)
+            priority = 5;
+        if (failureCount == null)
+            failureCount = 0;
     }
 
     @PreUpdate

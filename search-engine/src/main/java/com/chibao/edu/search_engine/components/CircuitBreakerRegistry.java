@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,8 +57,7 @@ public class CircuitBreakerRegistry {
                 DEFAULT_SUCCESS_THRESHOLD,
                 DEFAULT_TIMEOUT,
                 DEFAULT_HALF_OPEN_TIMEOUT,
-                meterRegistry
-        ));
+                meterRegistry));
     }
 
     /**
@@ -85,8 +83,7 @@ public class CircuitBreakerRegistry {
      */
     public Map<String, CircuitBreakerState> getAllStates() {
         Map<String, CircuitBreakerState> states = new ConcurrentHashMap<>();
-        breakers.forEach((domain, breaker) ->
-                states.put(domain, breaker.getState()));
+        breakers.forEach((domain, breaker) -> states.put(domain, breaker.getState()));
         return states;
     }
 
@@ -117,9 +114,9 @@ public class CircuitBreakerRegistry {
     }
 
     public enum CircuitBreakerState {
-        CLOSED,     // Normal operation
-        OPEN,       // Failures exceeded threshold
-        HALF_OPEN   // Testing recovery
+        CLOSED, // Normal operation
+        OPEN, // Failures exceeded threshold
+        HALF_OPEN // Testing recovery
     }
 
     /**
@@ -305,8 +302,7 @@ public class CircuitBreakerRegistry {
                     failureThreshold,
                     successCount.get(),
                     successThreshold,
-                    (System.currentTimeMillis() - lastStateChange.get()) / 1000
-            );
+                    (System.currentTimeMillis() - lastStateChange.get()) / 1000);
         }
     }
 
@@ -319,5 +315,3 @@ public class CircuitBreakerRegistry {
         }
     }
 }
-
-
