@@ -2,7 +2,7 @@ package com.chibao.edu.search_engine;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableAsync
 @EnableCaching
+@EntityScan(basePackages = "com.chibao.edu.search_engine.entity")
 @EnableJpaRepositories(basePackages = "com.chibao.edu.search_engine.repository")
 @EnableElasticsearchRepositories(basePackages = "com.chibao.edu.search_engine.repository.elasticsearch")
 public class SearchEngineApplication {

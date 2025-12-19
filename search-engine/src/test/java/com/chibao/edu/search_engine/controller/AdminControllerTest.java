@@ -2,7 +2,7 @@ package com.chibao.edu.search_engine.controller;
 
 import com.chibao.edu.search_engine.common.CrawlStatus;
 import com.chibao.edu.search_engine.repository.CrawlUrlRepository;
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import com.chibao.edu.search_engine.service.CrawlSchedulerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +41,8 @@ class AdminControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/crawl/seeds")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").exists())
                 .andExpect(jsonPath("$.count").value(2));

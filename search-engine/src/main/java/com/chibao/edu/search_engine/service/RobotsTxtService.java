@@ -1,5 +1,7 @@
 package com.chibao.edu.search_engine.service;
 
+import com.chibao.edu.search_engine.entity.DomainMetadata;
+import com.chibao.edu.search_engine.repository.DomainMetadataRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,25 +38,6 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class RobotsTxtService {
-
-    // Mocked for compilation. Replace with your actual repository.
-    private interface DomainMetadataRepository {
-        java.util.Optional<DomainMetadata> findByDomain(String domain);
-
-        void save(DomainMetadata metadata);
-    }
-
-    @Data
-    @lombok.Builder
-    public static class DomainMetadata {
-        private String domain;
-        private int maxConcurrentRequests;
-        private boolean isBlocked;
-        private int totalPagesCrawled;
-        private int totalFailures;
-        private Long crawlDelayMs;
-        private String robotsTxtContent;
-    }
 
     private final DomainMetadataRepository domainMetadataRepository;
     private final RedisTemplate<String, String> redisTemplate;
@@ -210,7 +193,8 @@ public class RobotsTxtService {
      */
     @Async
     public CompletableFuture<RobotsTxtRules> fetchAndCacheRobotsTxt(String domain) {
-        // Removed CompletableFuture.supplyAsync wrapper as @Async handles the threading.
+        // Removed CompletableFuture.supplyAsync wrapper as @Async handles the
+        // threading.
         try {
             String robotsUrl = "https://" + domain + "/robots.txt";
             log.info("Fetching robots.txt from {}", robotsUrl);
@@ -250,8 +234,7 @@ public class RobotsTxtService {
                         redisKey,
                         robotsContent,
                         ROBOTS_CACHE_TTL_HOURS,
-                        TimeUnit.HOURS
-                );
+                        TimeUnit.HOURS);
 
                 // Cache in memory
                 rulesCache.put(domain, rules);
@@ -396,7 +379,6 @@ public class RobotsTxtService {
 
         return rules;
     }
-
 
     /**
      * Create regex pattern from robots.txt path

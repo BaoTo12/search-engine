@@ -1,6 +1,6 @@
 package com.chibao.edu.search_engine.service;
 
-import com.chibao.edu.search_engine.repository.WebPageRepository;
+import com.chibao.edu.search_engine.repository.elasticsearch.WebPageRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
