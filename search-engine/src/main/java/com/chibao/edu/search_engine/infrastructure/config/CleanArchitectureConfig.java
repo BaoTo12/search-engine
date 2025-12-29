@@ -2,6 +2,7 @@ package com.chibao.edu.search_engine.infrastructure.config;
 
 import com.chibao.edu.search_engine.application.deduplication.usecase.DetectDuplicateContentUseCase;
 import com.chibao.edu.search_engine.application.ranking.usecase.CalculatePageRankUseCase;
+import com.chibao.edu.search_engine.domain.crawling.service.RateLimiterService;
 import com.chibao.edu.search_engine.domain.crawling.service.RobotsTxtParser;
 import com.chibao.edu.search_engine.domain.crawling.service.UrlNormalizationService;
 import com.chibao.edu.search_engine.domain.crawling.service.UrlPrioritizationService;
@@ -10,6 +11,8 @@ import com.chibao.edu.search_engine.domain.deduplication.service.SimHashService;
 import com.chibao.edu.search_engine.domain.indexing.service.TextProcessingService;
 import com.chibao.edu.search_engine.domain.ranking.repository.PageGraphRepository;
 import com.chibao.edu.search_engine.domain.ranking.service.PageRankCalculator;
+import com.chibao.edu.search_engine.domain.resilience.service.CircuitBreakerService;
+import com.chibao.edu.search_engine.domain.resilience.service.RetryStrategyService;
 import com.chibao.edu.search_engine.domain.search.service.QueryExpansionService;
 import com.chibao.edu.search_engine.infrastructure.persistence.jpa.adapter.PageGraphRepositoryJpaAdapter;
 import org.springframework.context.annotation.Bean;
@@ -66,6 +69,21 @@ public class CleanArchitectureConfig {
     @Bean
     public QueryExpansionService queryExpansionService() {
         return new QueryExpansionService();
+    }
+
+    @Bean
+    public RateLimiterService rateLimiterService() {
+        return new RateLimiterService();
+    }
+
+    @Bean
+    public CircuitBreakerService circuitBreakerService() {
+        return new CircuitBreakerService();
+    }
+
+    @Bean
+    public RetryStrategyService retryStrategyService() {
+        return new RetryStrategyService();
     }
 
     // ========== Repository Interfaces → Adapters ==========
