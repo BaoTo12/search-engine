@@ -1,0 +1,21 @@
+\u003c!-- OpenTelemetry (Distributed Tracing with Jaeger) --\u003e
+\u003cdependency\u003e
+    \u003cgroupId\u003eio.opentelemetry\u003c/groupId\u003e
+    \u003cartifactId\u003eopentelemetry-api\u003c/artifactId\u003e
+    \u003cversion\u003e1.32.0\u003c/version\u003e
+\u003c/dependency\u003e
+\u003cdependency\u003e
+    \u003c!groupId\u003eio.opentelemetry\u003c/groupId\u003e
+    \u003cartifactId\u003eopentelemetry-sdk\u003c/artifactId\u003e
+    \u003cversion\u003e1.32.0\u003c/version\u003e
+\u003c/dependency\u003e
+\u003cdependency\u003e
+    \u003cgroupId\u003eio.opentelemetry\u003c/groupId\u003e
+    \u003cartifactId\u003eopentelemetry-exporter-jaeger\u003c/artifactId\u003e
+    \u003cversion\u003e1.32.0\u003c/version\u003e
+\u003c/dependency\u003e
+\u003cdependency\u003e
+    \u003cgroupId\u003eio.opentelemetry\u003c/groupId\u003e
+    \u003cartifactId\u003eopentelemetry-sdk-extension-autoconfigure\u003c/artifactId\u003e
+    \u003cversion\u003e1.32.0\u003c/version\u003e
+\u003c/dependency\u003e
