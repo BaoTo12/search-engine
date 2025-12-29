@@ -1,11 +1,12 @@
 package com.chibao.edu.search_engine.infrastructure.config;
 
-import com.chibao.edu.search_engine.application.search.port.output.SearchCachePort;
-import com.chibao.edu.search_engine.application.search.usecase.GetSuggestionsUseCase;
-import com.chibao.edu.search_engine.application.search.usecase.SearchDocumentsUseCase;
-import com.chibao.edu.search_engine.domain.search.repository.SearchRepository;
-import com.chibao.edu.search_engine.infrastructure.cache.redis.adapter.SearchCacheRedisAdapter;
-import com.chibao.edu.search_engine.infrastructure.persistence.elasticsearch.adapter.SearchRepositoryElasticsearchAdapter;
+import com.chibao.edu.search_engine.application.ranking.usecase.CalculatePageRankUseCase;
+import com.chibao.edu.search_engine.domain.crawling.service.RobotsTxtParser;
+import com.chibao.edu.search_engine.domain.crawling.service.UrlNormalizationService;
+import com.chibao.edu.search_engine.domain.indexing.service.TextProcessingService;
+import com.chibao.edu.search_engine.domain.ranking.repository.PageGraphRepository;
+import com.chibao.edu.search_engine.domain.ranking.service.PageRankCalculator;
+import com.chibao.edu.search_engine.infrastructure.persistence.jpa.adapter.PageGraphRepositoryJpaAdapter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,38 +21,41 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CleanArchitectureConfig {
 
-    /**
-     * Wire domain repository interface to Elasticsearch adapter.
-     * This is Dependency Inversion Principle in action!
-     */
+    // ========== Domain Services ==========
+
     @Bean
-    public SearchRepository searchRepository(SearchRepositoryElasticsearchAdapter adapter) {
-        return adapter; // Return interface, inject implementation
+    public UrlNormalizationService urlNormalizationService() {
+        return new UrlNormalizationService();
     }
 
-    /**
-     * Wire application port to Redis adapter.
-     */
     @Bean
-    public SearchCachePort searchCachePort(SearchCacheRedisAdapter adapter) {
+    public RobotsTxtParser robotsTxtParser() {
+        return new RobotsTxtParser();
+    }
+
+    @Bean
+    public TextProcessingService textProcessingService() {
+        return new TextProcessingService();
+    }
+
+    @Bean
+    public PageRankCalculator pageRankCalculator() {
+        return new PageRankCalculator();
+    }
+
+    // ========== Repository Interfaces → Adapters ==========
+
+    @Bean
+    public PageGraphRepository pageGraphRepository(PageGraphRepositoryJpaAdapter adapter) {
         return adapter;
     }
 
-    /**
-     * Create SearchDocumentsUseCase with its dependencies.
-     */
-    @Bean
-    public SearchDocumentsUseCase searchDocumentsUseCase(
-            SearchRepository searchRepository,
-            SearchCachePort searchCachePort) {
-        return new SearchDocumentsUseCase(searchRepository, searchCachePort);
-    }
+    // ========== Use Cases ==========
 
-    /**
-     * Create GetSuggestionsUseCase with its dependencies.
-     */
     @Bean
-    public GetSuggestionsUseCase getSuggestionsUseCase(SearchRepository searchRepository) {
-        return new GetSuggestionsUseCase(searchRepository);
+    public CalculatePageRankUseCase calculatePageRankUseCase(
+            PageGraphRepository pageGraphRepository,
+            PageRankCalculator pageRankCalculator) {
+        return new CalculatePageRankUseCase(pageGraphRepository, pageRankCalculator);
     }
 }

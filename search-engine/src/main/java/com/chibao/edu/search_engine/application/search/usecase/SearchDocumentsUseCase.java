@@ -47,10 +47,10 @@ public class SearchDocumentsUseCase {
 
         // Generate cache key
         String cacheKey = cachePort.generateCacheKey(
-                request.query(),
-                request.page(),
-                request.size(),
-                request.sortBy());
+                request.getQuery(),
+                request.getPage(),
+                request.getSize(),
+                request.getSortBy());
 
         // Check cache
         SearchResponseDTO cachedResult = cachePort.get(cacheKey);
@@ -59,8 +59,8 @@ public class SearchDocumentsUseCase {
         }
 
         // Create domain value objects
-        SearchQuery query = SearchQuery.of(request.query());
-        Pagination pagination = Pagination.of(request.page(), request.size());
+        SearchQuery query = SearchQuery.of(request.getQuery());
+        Pagination pagination = Pagination.of(request.getPage(), request.getSize());
 
         // Execute domain repository query
         List<SearchResultEntity> domainResults = searchRepository.search(query, pagination);
@@ -74,13 +74,15 @@ public class SearchDocumentsUseCase {
         long executionTime = System.currentTimeMillis() - startTime;
 
         // Build response
-        SearchResponseDTO response = new SearchResponseDTO(
-                request.query(),
-                totalResults,
-                request.page(),
-                request.size(),
-                resultDTOs,
-                executionTime);
+        SearchResponseDTO response = SearchResponseDTO.builder()
+                .query(request.getQuery())
+                .totalResults(totalResults)
+                .page(request.getPage())
+                .size(request.getSize())
+                .totalPages((int) Math.ceil((double) totalResults / request.getSize()))
+                .searchTimeMs(executionTime)
+                .results(resultDTOs)
+                .build();
 
         // Cache result
         cachePort.put(cacheKey, response, CACHE_TTL_MINUTES);
@@ -89,11 +91,13 @@ public class SearchDocumentsUseCase {
     }
 
     private SearchResultDTO mapToDTO(SearchResultEntity entity) {
-        return new SearchResultDTO(
-                entity.getUrl(),
-                entity.getTitle(),
-                entity.getSnippet(),
-                entity.getScore().getValue(),
-                entity.getLastCrawled());
+        return SearchResultDTO.builder()
+                .url(entity.getUrl())
+                .title(entity.getTitle())
+                .snippet(entity.getSnippet())
+                .relevanceScore(entity.getRelevanceScore())
+                .pagerankScore(entity.getPagerankScore())
+                .language(entity.getLanguage())
+                .build();
     }
 }

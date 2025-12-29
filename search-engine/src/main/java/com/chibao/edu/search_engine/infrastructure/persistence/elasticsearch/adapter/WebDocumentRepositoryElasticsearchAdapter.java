@@ -41,7 +41,7 @@ public class WebDocumentRepositoryElasticsearchAdapter implements WebDocumentRep
         esDoc.setTitle(doc.getTitle());
         esDoc.setContent(doc.getContent());
         esDoc.setTokens(doc.getTokens());
-        esDoc.setIndexedAt(doc.getIndexedAt());
+        // indexedAt is not in WebPageEsDocument - using crawledAt instead if needed
         return esDoc;
     }
 }

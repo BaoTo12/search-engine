@@ -45,7 +45,12 @@ public class SearchControllerV2 {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(defaultValue = "relevance") String sortBy) {
         // Create application DTO
-        SearchRequestDTO request = new SearchRequestDTO(q, page, size, sortBy);
+        SearchRequestDTO request = SearchRequestDTO.builder()
+                .query(q)
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .build();
 
         // Execute use case
         SearchResponseDTO response = searchDocumentsUseCase.execute(request);

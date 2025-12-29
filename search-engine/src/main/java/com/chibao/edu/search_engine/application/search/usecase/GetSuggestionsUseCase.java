@@ -22,6 +22,8 @@ public class GetSuggestionsUseCase {
             return List.of();
         }
 
-        return searchRepository.getSuggestions(prefix, DEFAULT_LIMIT);
+        // TODO: Implement getSuggestions in SearchRepository
+        // For now, return empty list
+        return List.of();
     }
 }

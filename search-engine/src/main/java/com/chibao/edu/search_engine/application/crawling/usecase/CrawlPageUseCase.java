@@ -1,9 +1,6 @@
 package com.chibao.edu.search_engine.application.crawling.usecase;
 
 import com.chibao.edu.search_engine.domain.crawling.model.aggregate.CrawlJob;
-import com.chibao.edu.search_engine.domain.crawling.model.valueobject.CrawlDepth;
-import com.chibao.edu.search_engine.domain.crawling.model.valueobject.CrawlStatus;
-import com.chibao.edu.search_engine.domain.crawling.model.valueobject.Url;
 import com.chibao.edu.search_engine.domain.crawling.repository.CrawlJobRepository;
 import com.chibao.edu.search_engine.domain.crawling.service.RobotsTxtParser;
 import com.chibao.edu.search_engine.domain.crawling.service.UrlNormalizationService;

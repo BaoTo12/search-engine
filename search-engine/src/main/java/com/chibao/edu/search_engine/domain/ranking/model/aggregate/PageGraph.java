@@ -1,45 +1,100 @@
 package com.chibao.edu.search_engine.domain.ranking.model.aggregate;
 
-import com.chibao.edu.search_engine.domain.ranking.model.valueobject.PageRankScore;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.util.*;
 
+/**
+ * PageGraph aggregate root.
+ * Represents the web page link graph for PageRank calculation.
+ */
+@Getter
+@Builder
 public class PageGraph {
-    private final Map<String, PageRankScore> scores;
-    private final Map<String, List<String>> incomingLinks;
-    private final Map<String, List<String>> outgoingLinks;
 
-    public PageGraph() {
-        this.scores = new HashMap<>();
-        this.incomingLinks = new HashMap<>();
-        this.outgoingLinks = new HashMap<>();
+    private final Set<String> pages;
+    private final Map<String, Set<String>> adjacencyList; // page -> outbound links
+    private final Map<String, Set<String>> reverseAdjacencyList; // page -> inbound links
+
+    /**
+     * Get all pages in the graph.
+     */
+    public Set<String> getPages() {
+        return Collections.unmodifiableSet(pages);
     }
 
-    public void addLink(String fromUrl, String toUrl) {
-        incomingLinks.computeIfAbsent(toUrl, k -> new ArrayList<>()).add(fromUrl);
-        outgoingLinks.computeIfAbsent(fromUrl, k -> new ArrayList<>()).add(toUrl);
+    /**
+     * Get outbound links from a page.
+     */
+    public Set<String> getOutboundLinks(String page) {
+        return adjacencyList.getOrDefault(page, Collections.emptySet());
     }
 
-    public void setScore(String url, PageRankScore score) {
-        scores.put(url, score);
+    /**
+     * Get inbound links to a page.
+     */
+    public Set<String> getInboundLinks(String page) {
+        return reverseAdjacencyList.getOrDefault(page, Collections.emptySet());
     }
 
-    public PageRankScore getScore(String url) {
-        return scores.getOrDefault(url, PageRankScore.zero());
+    /**
+     * Add a link from source to target.
+     */
+    public void addLink(String source, String target) {
+        pages.add(source);
+        pages.add(target);
+
+        // Add to adjacency list
+        adjacencyList.computeIfAbsent(source, k -> new HashSet<>()).add(target);
+
+        // Add to reverse adjacency list
+        reverseAdjacencyList.computeIfAbsent(target, k -> new HashSet<>()).add(source);
     }
 
-    public Map<String, PageRankScore> getAllScores() {
-        return new HashMap<>(scores);
+    /**
+     * Get number of pages in the graph.
+     */
+    public int size() {
+        return pages.size();
     }
 
-    public List<String> getIncomingLinks(String url) {
-        return incomingLinks.getOrDefault(url, List.of());
+    /**
+     * Get total number of links in the graph.
+     */
+    public int getLinkCount() {
+        return adjacencyList.values().stream()
+                .mapToInt(Set::size)
+                .sum();
     }
 
-    public List<String> getOutgoingLinks(String url) {
-        return outgoingLinks.getOrDefault(url, List.of());
+    /**
+     * Create an empty graph.
+     */
+    public static PageGraph empty() {
+        return PageGraph.builder()
+                .pages(new HashSet<>())
+                .adjacencyList(new HashMap<>())
+                .reverseAdjacencyList(new HashMap<>())
+                .build();
     }
 
-    public int getPageCount() {
-        return scores.size();
+    /**
+     * Create a graph from links.
+     */
+    public static PageGraph fromLinks(List<PageLink> links) {
+        PageGraph graph = empty();
+        for (PageLink link : links) {
+            graph.addLink(link.getSource(), link.getTarget());
+        }
+        return graph;
+    }
+
+    @Getter
+    @Builder
+    public static class PageLink {
+        private String source;
+        private String target;
+        private String anchorText;
     }
 }
