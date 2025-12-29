@@ -7,35 +7,18 @@ import com.chibao.edu.search_engine.domain.search.model.valueobject.SearchQuery;
 import java.util.List;
 
 /**
- * Domain Repository Interface (Port).
- * Domain layer defines the contract, infrastructure implements it.
- * NO DEPENDENCIES ON INFRASTRUCTURE!
+ * Repository interface for search operations.
+ * Defined in domain, implemented in infrastructure.
  */
 public interface SearchRepository {
 
     /**
-     * Search documents matching the query.
-     * 
-     * @param query      Search query (value object)
-     * @param pagination Pagination parameters (value object)
-     * @return List of search results ordered by relevance
+     * Search for documents matching the query.
      */
     List<SearchResultEntity> search(SearchQuery query, Pagination pagination);
 
     /**
-     * Get total count of results for a query.
-     * 
-     * @param query Search query
-     * @return Total number of matching documents
+     * Count total results for a query.
      */
     long countResults(SearchQuery query);
-
-    /**
-     * Get search suggestions (autocomplete).
-     * 
-     * @param prefix Query prefix
-     * @param limit  Maximum number of suggestions
-     * @return List of suggested queries
-     */
-    List<String> getSuggestions(String prefix, int limit);
 }

@@ -1,96 +1,88 @@
 package com.chibao.edu.search_engine.domain.crawling.model.aggregate;
 
-import com.chibao.edu.search_engine.domain.crawling.model.valueobject.*;
 import com.chibao.edu.search_engine.domain.crawling.event.CrawlCompletedEvent;
 import com.chibao.edu.search_engine.domain.crawling.event.CrawlFailedEvent;
+import com.chibao.edu.search_engine.domain.crawling.model.valueobject.CrawlDepth;
+import com.chibao.edu.search_engine.domain.crawling.model.valueobject.CrawlStatus;
+import com.chibao.edu.search_engine.domain.crawling.model.valueobject.Url;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
- * Aggregate Root for Crawling domain.
- * Encapsulates all business logic related to a crawl job.
+ * CrawlJob Aggregate Root.
+ * Represents a single URL crawl job in the system.
  */
+@Getter
+@Builder
 public class CrawlJob {
-    private final String id;
-    private final Url url;
-    private final CrawlDepth depth;
+
+    private String id;
+    private Url url;
+    private CrawlDepth depth;
     private CrawlStatus status;
-    private int failureCount;
-    private LocalDateTime lastAttempt;
-    private final List<Object> domainEvents;
+    private Double priority;
+    private Integer retryCount;
+    private LocalDateTime createdAt;
+    private LocalDateTime scheduledAt;
+    private LocalDateTime crawledAt;
 
-    private CrawlJob(String id, Url url, CrawlDepth depth, CrawlStatus status) {
-        this.id = id;
-        this.url = url;
-        this.depth = depth;
-        this.status = status;
-        this.failureCount = 0;
-        this.domainEvents = new ArrayList<>();
-    }
+    @Builder.Default
+    private List<Object> domainEvents = new ArrayList<>();
 
-    public static CrawlJob create(Url url, int depth) {
-        return new CrawlJob(
-                UUID.randomUUID().toString(),
-                url,
-                CrawlDepth.of(depth),
-                CrawlStatus.PENDING);
-    }
-
+    /**
+     * Mark this crawl job as in progress.
+     */
     public void markAsInProgress() {
-        if (this.status != CrawlStatus.PENDING) {
-            throw new IllegalStateException("Can only start pending crawls");
+        if (this.status == CrawlStatus.COMPLETED) {
+            throw new IllegalStateException("Cannot restart completed crawl job");
         }
         this.status = CrawlStatus.IN_PROGRESS;
-        this.lastAttempt = LocalDateTime.now();
     }
 
+    /**
+     * Mark this crawl job as completed.
+     */
     public void markAsCompleted() {
         if (this.status != CrawlStatus.IN_PROGRESS) {
             throw new IllegalStateException("Can only complete in-progress crawls");
         }
         this.status = CrawlStatus.COMPLETED;
-        this.domainEvents.add(new CrawlCompletedEvent(this.id, this.url.getValue()));
+        this.crawledAt = LocalDateTime.now();
+        this.publishEvent(new CrawlCompletedEvent(this.id, this.url.getValue(), this.crawledAt));
     }
 
-    public void markAsFailed(String reason) {
+    /**
+     * Mark this crawl job as failed.
+     */
+    public void markAsFailed(String errorMessage) {
         this.status = CrawlStatus.FAILED;
-        this.failureCount++;
-        this.domainEvents.add(new CrawlFailedEvent(this.id, this.url.getValue(), reason));
+        this.retryCount++;
+        this.publishEvent(new CrawlFailedEvent(this.id, this.url.getValue(), errorMessage, LocalDateTime.now()));
     }
 
+    /**
+     * Check if this job can be retried.
+     */
     public boolean canRetry() {
-        return this.failureCount < 3;
+        return this.retryCount < 3 && this.status == CrawlStatus.FAILED;
     }
 
-    // Getters
-    public String getId() {
-        return id;
+    /**
+     * Increase priority.
+     */
+    public void increasePriority(double amount) {
+        this.priority += amount;
     }
 
-    public Url getUrl() {
-        return url;
+    private void publishEvent(Object event) {
+        this.domainEvents.add(event);
     }
 
-    public CrawlDepth getDepth() {
-        return depth;
-    }
-
-    public CrawlStatus getStatus() {
-        return status;
-    }
-
-    public int getFailureCount() {
-        return failureCount;
-    }
-
-    public List<Object> getDomainEvents() {
-        return new ArrayList<>(domainEvents);
-    }
-
-    public void clearDomainEvents() {
-        domainEvents.clear();
+    public void clearEvents() {
+        this.domainEvents.clear();
     }
 }

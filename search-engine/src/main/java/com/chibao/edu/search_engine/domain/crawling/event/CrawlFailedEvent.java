@@ -2,12 +2,12 @@ package com.chibao.edu.search_engine.domain.crawling.event;
 
 import java.time.LocalDateTime;
 
+/**
+ * Domain event fired when a crawl fails.
+ */
 public record CrawlFailedEvent(
         String crawlJobId,
         String url,
-        String reason,
+        String errorMessage,
         LocalDateTime occurredAt) {
-    public CrawlFailedEvent(String crawlJobId, String url, String reason) {
-        this(crawlJobId, url, reason, LocalDateTime.now());
-    }
 }

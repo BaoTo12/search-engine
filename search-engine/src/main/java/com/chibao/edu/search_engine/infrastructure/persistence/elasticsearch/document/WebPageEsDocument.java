@@ -1,5 +1,9 @@
 package com.chibao.edu.search_engine.infrastructure.persistence.elasticsearch.document;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -8,7 +12,14 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document(indexName = "web_pages")
+/**
+ * Elasticsearch document for indexed web pages.
+ */
+@Document(indexName = "web-pages")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class WebPageEsDocument {
 
     @Id
@@ -17,75 +28,33 @@ public class WebPageEsDocument {
     @Field(type = FieldType.Keyword)
     private String url;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "standard")
     private String title;
 
-    @Field(type = FieldType.Text)
-    private String content;
+    @Field(type = FieldType.Text, analyzer = "standard")
+    private String metaDescription;
 
-    @Field(type = FieldType.Text)
-    private String snippet;
+    @Field(type = FieldType.Text, analyzer = "english")
+    private String content;
 
     @Field(type = FieldType.Keyword)
     private List<String> tokens;
 
+    @Field(type = FieldType.Keyword)
+    private List<String> outboundLinks;
+
+    @Field(type = FieldType.Keyword)
+    private String language;
+
+    @Field(type = FieldType.Keyword)
+    private String contentHash;
+
     @Field(type = FieldType.Date)
-    private LocalDateTime indexedAt;
+    private LocalDateTime crawledAt;
 
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
+    @Field(type = FieldType.Long)
+    private Long contentSizeBytes;
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getSnippet() {
-        return snippet;
-    }
-
-    public void setSnippet(String snippet) {
-        this.snippet = snippet;
-    }
-
-    public List<String> getTokens() {
-        return tokens;
-    }
-
-    public void setTokens(List<String> tokens) {
-        this.tokens = tokens;
-    }
-
-    public LocalDateTime getIndexedAt() {
-        return indexedAt;
-    }
-
-    public void setIndexedAt(LocalDateTime indexedAt) {
-        this.indexedAt = indexedAt;
-    }
+    @Field(type = FieldType.Double)
+    private Double pagerankScore;
 }

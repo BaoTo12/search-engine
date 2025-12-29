@@ -1,93 +1,106 @@
 package com.chibao.edu.search_engine.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity for crawl_urls table.
+ * Maps to the database representation of URLs in the crawl queue.
+ */
 @Entity
 @Table(name = "crawl_urls")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CrawlUrlJpaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 2048)
+    private String url;
+
+    @Column(name = "normalized_url", nullable = false, length = 2048)
+    private String normalizedUrl;
 
     @Column(nullable = false)
-    private String url;
+    private String domain;
+
+    @Column(name = "url_hash", nullable = false, unique = true, length = 64)
+    private String urlHash;
+
+    // Crawl status
+    @Column(nullable = false, length = 50)
+    private String status; // PENDING, IN_PROGRESS, COMPLETED, FAILED, BLOCKED
+
+    @Column(nullable = false)
+    private Double priority;
 
     @Column(nullable = false)
     private Integer depth;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CrawlStatusJpa status;
+    @Column(name = "max_depth", nullable = false)
+    private Integer maxDepth;
 
-    @Column(name = "failure_count")
-    private Integer failureCount = 0;
-
-    @Column(name = "last_attempt")
-    private LocalDateTime lastAttempt;
-
-    @Column(name = "created_at")
+    // Timestamps
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // Getters and setters
-    public String getId() {
-        return id;
-    }
+    @Column(name = "scheduled_at")
+    private LocalDateTime scheduledAt;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    @Column(name = "crawled_at")
+    private LocalDateTime crawledAt;
 
-    public String getUrl() {
-        return url;
-    }
+    @Column(name = "next_crawl_at")
+    private LocalDateTime nextCrawlAt;
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
+    // Retry and error handling
+    @Column(name = "retry_count", nullable = false)
+    private Integer retryCount;
 
-    public Integer getDepth() {
-        return depth;
-    }
+    @Column(name = "max_retries", nullable = false)
+    private Integer maxRetries;
 
-    public void setDepth(Integer depth) {
-        this.depth = depth;
-    }
+    @Column(name = "last_error", columnDefinition = "TEXT")
+    private String lastError;
 
-    public CrawlStatusJpa getStatus() {
-        return status;
-    }
+    // Metadata
+    @Column(name = "source_url", length = 2048)
+    private String sourceUrl;
 
-    public void setStatus(CrawlStatusJpa status) {
-        this.status = status;
-    }
+    @Column(name = "anchor_text", columnDefinition = "TEXT")
+    private String anchorText;
 
-    public Integer getFailureCount() {
-        return failureCount;
-    }
-
-    public void setFailureCount(Integer failureCount) {
-        this.failureCount = failureCount;
-    }
-
-    public LocalDateTime getLastAttempt() {
-        return lastAttempt;
-    }
-
-    public void setLastAttempt(LocalDateTime lastAttempt) {
-        this.lastAttempt = lastAttempt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public enum CrawlStatusJpa {
-        PENDING, IN_PROGRESS, COMPLETED, FAILED, BLOCKED
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (status == null) {
+            status = "PENDING";
+        }
+        if (priority == null) {
+            priority = 0.0;
+        }
+        if (retryCount == null) {
+            retryCount = 0;
+        }
+        if (maxRetries == null) {
+            maxRetries = 3;
+        }
+        if (depth == null) {
+            depth = 0;
+        }
+        if (maxDepth == null) {
+            maxDepth = 3;
+        }
     }
 }

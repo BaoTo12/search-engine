@@ -1,10 +1,13 @@
 package com.chibao.edu.search_engine.domain.indexing.model.aggregate;
 
 import com.chibao.edu.search_engine.domain.indexing.model.valueobject.ContentHash;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 public class WebDocument {
     private final String id;
     private final String url;
@@ -36,31 +39,4 @@ public class WebDocument {
                 tokens);
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public ContentHash getContentHash() {
-        return contentHash;
-    }
-
-    public List<String> getTokens() {
-        return tokens;
-    }
-
-    public LocalDateTime getIndexedAt() {
-        return indexedAt;
-    }
 }

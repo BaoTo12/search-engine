@@ -11,12 +11,10 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Clean Architecture Configuration.
- * 
  * Wires together:
  * - Domain interfaces → Infrastructure implementations (Dependency Inversion)
  * - Application ports → Infrastructure adapters (Hexagonal Architecture)
  * - Use cases with their dependencies
- * 
  * This is the ONLY place where we know about concrete implementations.
  */
 @Configuration

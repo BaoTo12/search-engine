@@ -5,119 +5,112 @@ import com.chibao.edu.search_engine.domain.search.model.valueobject.Pagination;
 import com.chibao.edu.search_engine.domain.search.model.valueobject.SearchQuery;
 import com.chibao.edu.search_engine.domain.search.repository.SearchRepository;
 import com.chibao.edu.search_engine.infrastructure.persistence.elasticsearch.document.WebPageEsDocument;
-import com.chibao.edu.search_engine.infrastructure.persistence.elasticsearch.repository.WebPageEsRepository;
-
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
-import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Infrastructure Adapter: Implements domain SearchRepository using
- * Elasticsearch.
- * This is the "Adapter" in Ports & Adapters (Hexagonal Architecture).
- * 
- * Responsibilities:
- * - Implement domain repository interface
- * - Convert domain models ↔ infrastructure models (WebPage entity)
- * - Handle Elasticsearch-specific logic
+ * Elasticsearch adapter implementing SearchRepository interface.
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class SearchRepositoryElasticsearchAdapter implements SearchRepository {
 
         private final ElasticsearchOperations elasticsearchOperations;
-        private final WebPageEsRepository webPageEsRepository; // Spring Data ES repository
 
-        public SearchRepositoryElasticsearchAdapter(
-                        ElasticsearchOperations elasticsearchOperations,
-                        WebPageEsRepository webPageEsRepository) {
-                this.elasticsearchOperations = elasticsearchOperations;
-                this.webPageEsRepository = webPageEsRepository;
+        @Override
+        public List<SearchResultEntity> search(SearchQuery searchQuery, Pagination pagination) {
+                try {
+                        // Build Elasticsearch query
+                        Query query = NativeQuery.builder()
+                                        .withQuery(q -> q
+                                                        .multiMatch(m -> m
+                                                                        .query(searchQuery.getValue())
+                                                                        .fields("title^3", "metaDescription^2",
+                                                                                        "content")
+                                                                        .type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields)
+                                                                        .fuzziness("AUTO")))
+                                        .withPageable(PageRequest.of(
+                                                        pagination.getPage(),
+                                                        pagination.getSize()))
+                                        .build();
+
+                        // Execute search
+                        SearchHits<WebPageEsDocument> searchHits = elasticsearchOperations.search(
+                                        query,
+                                        WebPageEsDocument.class);
+
+                        // Map to domain entities
+                        return searchHits.getSearchHits().stream()
+                                        .map(this::toSearchResultEntity)
+                                        .collect(Collectors.toList());
+
+                } catch (Exception e) {
+                        log.error("Error searching Elasticsearch: {}", e.getMessage(), e);
+                        return List.of();
+                }
         }
 
         @Override
-        public List<SearchResultEntity> search(SearchQuery query, Pagination pagination) {
-                // Build Elasticsearch query
-                Query boolQuery = QueryBuilders.bool(b -> b
-                                .should(QueryBuilders.match(m -> m.field("title").query(query.getValue()).boost(3.0f)))
-                                .should(QueryBuilders
-                                                .match(m -> m.field("content").query(query.getValue()).boost(1.0f)))
-                                .should(QueryBuilders.match(m -> m.field("tokens").query(query.getValue()).boost(2.0f)))
-                                .minimumShouldMatch("1"));
+        public long countResults(SearchQuery searchQuery) {
+                try {
+                        Query query = NativeQuery.builder()
+                                        .withQuery(q -> q
+                                                        .multiMatch(m -> m
+                                                                        .query(searchQuery.getValue())
+                                                                        .fields("title", "metaDescription", "content")))
+                                        .build();
 
-                PageRequest pageRequest = PageRequest.of(pagination.getPage(), pagination.getSize());
+                        SearchHits<WebPageEsDocument> searchHits = elasticsearchOperations.search(
+                                        query,
+                                        WebPageEsDocument.class);
 
-                NativeQuery searchQuery = new NativeQueryBuilder()
-                                .withQuery(boolQuery)
-                                .withPageable(pageRequest)
-                                .build();
+                        return searchHits.getTotalHits();
 
-                // Execute search
-                SearchHits<WebPageEsDocument> searchHits = elasticsearchOperations.search(searchQuery,
-                                WebPageEsDocument.class);
-
-                // Convert infrastructure entities to domain entities
-                return searchHits.getSearchHits().stream()
-                                .map(this::toDomainEntity)
-                                .collect(Collectors.toList());
+                } catch (Exception e) {
+                        log.error("Error counting results: {}", e.getMessage());
+                        return 0;
+                }
         }
 
-        @Override
-        public long countResults(SearchQuery query) {
-                Query boolQuery = QueryBuilders.bool(b -> b
-                                .should(QueryBuilders.match(m -> m.field("title").query(query.getValue())))
-                                .should(QueryBuilders.match(m -> m.field("content").query(query.getValue())))
-                                .minimumShouldMatch("1"));
+        private SearchResultEntity toSearchResultEntity(SearchHit<WebPageEsDocument> hit) {
+                WebPageEsDocument doc = hit.getContent();
 
-                NativeQuery countQuery = new NativeQueryBuilder()
-                                .withQuery(boolQuery)
+                return SearchResultEntity.builder()
+                                .url(doc.getUrl())
+                                .title(doc.getTitle() != null ? doc.getTitle() : "Untitled")
+                                .snippet(generateSnippet(doc.getContent()))
+                                .relevanceScore(hit.getScore())
+                                .pagerankScore(doc.getPagerankScore() != null ? doc.getPagerankScore() : 0.0)
+                                .language(doc.getLanguage())
                                 .build();
-
-                SearchHits<WebPageEsDocument> hits = elasticsearchOperations.search(countQuery,
-                                WebPageEsDocument.class);
-                return hits.getTotalHits();
         }
 
-        @Override
-        public List<String> getSuggestions(String prefix, int limit) {
-                Query prefixQuery = QueryBuilders.matchPhrasePrefix(m -> m.field("title").query(prefix));
+        private String generateSnippet(String content) {
+                if (content == null || content.isEmpty()) {
+                        return "";
+                }
 
-                NativeQuery query = new NativeQueryBuilder()
-                                .withQuery(prefixQuery)
-                                .withPageable(PageRequest.of(0, limit))
-                                .build();
+                // Simple snippet generation - take first 200 chars
+                int snippetLength = Math.min(200, content.length());
+                String snippet = content.substring(0, snippetLength);
 
-                SearchHits<WebPageEsDocument> hits = elasticsearchOperations.search(query, WebPageEsDocument.class);
+                // Try to end at a word boundary
+                int lastSpace = snippet.lastIndexOf(' ');
+                if (lastSpace > 100) {
+                        snippet = snippet.substring(0, lastSpace);
+                }
 
-                return hits.getSearchHits().stream()
-                                .map(hit -> hit.getContent().getTitle())
-                                .distinct()
-                                .limit(limit)
-                                .collect(Collectors.toList());
-        }
-
-        /**
-         * Convert infrastructure document (WebPageEsDocument) to domain entity
-         * (SearchResultEntity).
-         * This mapping keeps domain independent of infrastructure.
-         */
-        private SearchResultEntity toDomainEntity(SearchHit<WebPageEsDocument> hit) {
-                WebPageEsDocument page = hit.getContent();
-                double normalizedScore = hit.getScore() > 0 ? Math.min(hit.getScore() / 10.0, 1.0) : 0.0;
-
-                return SearchResultEntity.create(
-                                page.getUrl(),
-                                page.getTitle(),
-                                page.getSnippet() != null ? page.getSnippet() : "",
-                                normalizedScore,
-                                page.getIndexedAt());
+                return snippet + "...";
         }
 }

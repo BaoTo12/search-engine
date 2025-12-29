@@ -1,24 +1,41 @@
 package com.chibao.edu.search_engine.application.search.dto;
 
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 /**
- * Application DTO for search responses.
- * Maps from domain layer to presentation layer.
+ * Enhanced search response DTO with metadata.
  */
-public record SearchResponseDTO(
-        String query,
-        long totalResults,
-        int page,
-        int size,
-        List<SearchResultDTO> results,
-        long executionTimeMs) {
-    public record SearchResultDTO(
-            String url,
-            String title,
-            String snippet,
-            double score,
-            LocalDateTime lastCrawled) {
-    }
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SearchResponseDTO {
+        private String query;
+        private Long totalResults;
+        private Integer page;
+        private Integer size;
+        private Integer totalPages;
+        private Long searchTimeMs;
+        private List<SearchResultDTO> results;
+        private List<String> suggestions; // "Did you mean?" suggestions
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class SearchResultDTO {
+                private String url;
+                private String title;
+                private String snippet;
+                private Double relevanceScore;
+                private Double pagerankScore;
+                private String language;
+                private String crawledAt;
+                private List<String> highlightedTerms;
+        }
 }

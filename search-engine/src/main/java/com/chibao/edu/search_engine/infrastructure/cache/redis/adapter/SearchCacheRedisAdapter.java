@@ -46,7 +46,7 @@ public class SearchCacheRedisAdapter implements SearchCachePort {
     public void clear() {
         try {
             var keys = redisTemplate.keys(CACHE_KEY_PREFIX + "*");
-            if (keys != null && !keys.isEmpty()) {
+            if (!keys.isEmpty()) {
                 redisTemplate.delete(keys);
             }
         } catch (Exception e) {

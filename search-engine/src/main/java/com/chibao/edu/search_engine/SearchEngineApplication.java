@@ -6,10 +6,6 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/**
- * Main Spring Boot Application.
- * Clean Architecture + DDD implementation.
- */
 @SpringBootApplication
 @EnableScheduling
 @EnableJpaRepositories(basePackages = "com.chibao.edu.search_engine.infrastructure.persistence.jpa.repository")

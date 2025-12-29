@@ -61,20 +61,6 @@ This is a **Clean Architecture + DDD** implementation following the **Hexagonal 
 └─────────────────────────────────────┘
 ```
 
----
-
-## 🛠️ Technology Stack
-
-- **Backend Framework**: Spring Boot 3.5.7 (Java 21)
-- **Search Engine**: Elasticsearch 8.x
-- **Database**: PostgreSQL (with Flyway migrations)
-- **Cache**: Redis
-- **Message Broker**: Apache Kafka
-- **Text Processing**: Apache Lucene
-- **Metrics**: Micrometer, Prometheus
-- **API Docs**: SpringDoc OpenAPI
-
----
 
 ## 📁 Project Structure
 
