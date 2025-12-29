@@ -1,25 +1,18 @@
-🕸️ Distributed Crawler & Indexer (Search Engine Core)
+# 🕸️ Distributed Crawler & Indexer (Search Engine Core)
 🧭 Overview
 
 This project aims to build a complete, scalable search engine with a **Google-like web interface**.
 It consists of multiple backend services (microservices) that coordinate via Kafka and store structured data in Elasticsearch, plus a modern **Next.js frontend** that provides an intuitive search experience similar to Google.
 
 🎯 Goals
+- Crawl and index web content from multiple domains efficiently.
+- Scale horizontally (add more crawlers easily).
+- Store, tokenize, and rank indexed documents.
+- Provide search results through a REST API.
 
-Crawl and index web content from multiple domains efficiently.
-
-Scale horizontally (add more crawlers easily).
-
-Store, tokenize, and rank indexed documents.
-
-Provide search results through a REST API.
-
-**Build a Google-like web interface** for end users to search intuitively.
-
-Maintain fault-tolerance and high throughput.
 
 🧱 System Architecture Overview
-
+```
 +-------------------------------------------------------------+
 |              User Search Interface (Web UI)                 |
 |          Next.js Frontend (Google-like Interface)           |
@@ -62,6 +55,7 @@ Maintain fault-tolerance and high throughput.
                    +------------------------+
                    |   Seed URLs Database   |
                    +------------------------+
+```
 ## ⚙️ Core Components
 
 ### 1. 🧩 Crawl Scheduler (Dispatcher)
@@ -379,15 +373,13 @@ Maintain fault-tolerance and high throughput.
   "links": ["https://another.com"],
   "last_crawled": "2025-10-29T13:00:00Z"
 }
+```
 Ranking Features:
-
 TF-IDF weighting.
-
 PageRank-style scoring (based on inbound links).
-
 Optional: semantic relevance model.
 
-5. 🔍 Search API Service
+### 5. 🔍 Search API Service
 
 Purpose: Exposes endpoints to perform user queries against the indexed data.
 
@@ -404,7 +396,7 @@ Cache hot queries in Redis.
 Log query metrics for analytics.
 
 Example Response:
-
+```
 {
   "query": "java concurrency",
   "total_results": 2493,
@@ -416,8 +408,8 @@ Example Response:
     }
   ]
 }
-
-🧩 Data Flow Summary
+```
+## 🧩 Data Flow Summary
 🔹 Crawl Phase
 
 Scheduler sends seed URLs → Kafka crawl-requests.
@@ -440,7 +432,7 @@ User types query in **Web UI** → Search API → queries Elasticsearch.
 
 Results returned → ranked → paginated → displayed in Google-like interface.
 
-🚀 Scaling Strategy
+### 🚀 Scaling Strategy
 Component	Scaling Approach
 Scheduler	Stateless → horizontally scalable
 Crawler Worker	Multiple replicas consuming Kafka partitions
@@ -453,7 +445,7 @@ Elasticsearch	Cluster with sharding and replication
 Key Idea:
 All communication happens asynchronously through Kafka topics, ensuring elasticity and fault isolation.
 
-🧠 Runtime Behavior
+### 🧠 Runtime Behavior
 
 Crawl Burst: Kafka backpressure controls message flow.
 
@@ -465,7 +457,7 @@ Re-crawling: Scheduler revisits URLs periodically.
 
 Ranking: Offline analyzer recalculates scores weekly.
 
-📊 Monitoring & Observability
+### 📊 Monitoring & Observability
 
 Prometheus + Grafana: Crawl rate, error rates, queue sizes.
 
@@ -475,26 +467,26 @@ Kafka Lag Exporter: Track consumer lag.
 
 ELK Stack: Log aggregation and search.
 
-🔒 Fault Tolerance
+### 🔒 Fault Tolerance
 Issue	Mitigation
 Worker crash	Kafka rebalances consumer groups
 Scheduler down	Redis retains pending URLs
 Indexer failure	Kafka offsets prevent data loss
 Elasticsearch full	Index lifecycle management
 Network congestion	Backpressure & retry queue
-🧩 Optional Extensions
+### 🧩 Optional Extensions
 
-🧠 Content classifier (news/blog/docs detection).
+### 🧠 Content classifier (news/blog/docs detection).
 
-🖼️ Image metadata extraction.
+### 🖼️ Image metadata extraction.
 
-🤖 Semantic search using BERT embeddings.
+### 🤖 Semantic search using BERT embeddings.
 
-⚙️ Domain-based rate limiting.
+### ⚙️ Domain-based rate limiting.
 
-📈 Admin dashboard (stats, failures, throughput).
+### 📈 Admin dashboard (stats, failures, throughput).
 
-🧭 Skills & Concepts Learned
+### 🧭 Skills & Concepts Learned
 Area	Key Learning
 Concurrency	Thread pools, async I/O, synchronization
 Distributed Systems	Kafka coordination, partitioning, scaling
@@ -503,7 +495,7 @@ Scalability	Stateless design, load balancing
 Resilience	Fault isolation, message durability
 DevOps	Docker, monitoring, observability
 Architecture	Event-driven design & system decoupling
-🧰 Recommended Tech Stack
+### 🧰 Recommended Tech Stack
 Layer	Technologies
 Language	Java 21+
 Framework	Spring Boot 3+
