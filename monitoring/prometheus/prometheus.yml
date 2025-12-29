@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'search-engine'
+    environment: 'production'
+
+scrape_configs:
+  # Spring Boot Application Metrics
+  - job_name: 'search-engine'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'search-engine'
+          
+  # Kafka Metrics (if JMX exporter configured)
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+        labels:
+          service: 'kafka'
+          
+  # PostgreSQL Metrics (if postgres_exporter configured)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+        labels:
+          service: 'postgres'
+          
+  # Redis Metrics (if redis_exporter configured)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'redis'
